@@ -1,0 +1,12 @@
+[submodule "mach-glfw"]
+	path = mach-glfw
+	url = https://github.com/hexops/mach-glfw
+[submodule "zalgebra"]
+	path = zalgebra
+	url = https://github.com/kooparse/zalgebra
+[submodule "zigimg"]
+	path = zigimg
+	url = https://github.com/zigimg/zigimg
+[submodule "zgl"]
+	path = zgl
+	url = https://github.com/ziglibs/zgl
