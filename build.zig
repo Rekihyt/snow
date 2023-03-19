@@ -3,16 +3,22 @@ const builtin = @import("builtin");
 const glfw = @import("mach-glfw/build.zig");
 
 pub fn build(b: *Builder) void {
-    const mode = b.standardReleaseOptions();
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
 
-    var exe = b.addExecutable("main", "src/main.zig");
-    exe.setBuildMode(mode);
+    var exe = b.addExecutable(.{
+        .name = "main",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.install();
 
     const ziglibs = "./";
-    exe.addPackagePath("zgl", ziglibs ++ "zgl/zgl.zig");
-    exe.addPackagePath("zigimg", ziglibs ++ "zigimg/zigimg.zig");
-    exe.addPackagePath("glfw", ziglibs ++ "mach-glfw/src/main.zig");
-    exe.addPackagePath("zalgebra", ziglibs ++ "zalgebra/src/main.zig");
+    exe.addAnonymousModule(ziglibs ++ "zgl/zgl.zig", .{});
+    exe.addAnonymousModule(ziglibs ++ "zigimg/zigimg.zig", .{});
+    exe.addAnonymousModule(ziglibs ++ "mach-glfw/src/main.zig", .{});
+    exe.addAnonymousModule(ziglibs ++ "zalgebra/src/main.zig", .{});
 
     // exe.addIncludeDir("stb_image-2.22");
     // exe.addCSourceFile("stb_image-2.22/stb_image_impl.c", &[_][]const u8{"-std=c99"});
