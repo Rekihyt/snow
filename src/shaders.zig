@@ -14,6 +14,7 @@ const Allocator = std.Allocator;
 const meta = std.meta;
 const Float = zgl.Float;
 const UniformMap = std.StringHashMap(u32);
+const allocator = std.heap.page_allocator;
 
 pub const ShaderDescription = struct {
     source: []const u8,
@@ -62,7 +63,6 @@ fn initGlShader(source: []const u8, shader_type: ShaderType) !Shader {
 
     // TODO: if debug
     {
-        const allocator = std.testing.allocator;
         const info_log = try zgl.getShaderInfoLog(shader, allocator);
         defer allocator.free(info_log);
         if (info_log.len != 0)

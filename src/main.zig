@@ -16,7 +16,7 @@ const ShaderDescription = shaders.ShaderDescription;
 const Uniforms = shaders.Uniforms;
 const zgl = @import("zgl");
 const zwl = @import("zwl");
-const glfw = @import("glfw");
+const glfw = @import("mach-glfw");
 const za = @import("zalgebra");
 const Vec3 = za.Vec3;
 const Mat4 = za.Mat4;
@@ -68,11 +68,11 @@ fn handleInput(window: Window, model: *za.Vec3) bool {
 }
 
 pub fn main() !void {
-    try glfw.init(.{});
+    _ = glfw.init(.{});
     defer glfw.terminate();
 
     // Create our window
-    const window = try Window.create(640, 480, "Snow", null, null, .{
+    const window =  Window.create(640, 480, "Snow", null, null, .{
         .transparent_framebuffer = true,
         .maximized = true,
         .context_version_major = 4,
@@ -81,15 +81,15 @@ pub fn main() !void {
         .opengl_forward_compat = true,
         // .opengl_debug_context = true,
         .opengl_profile = .opengl_core_profile,
-    });
+    }) orelse unreachable;
     defer window.destroy();
 
     window.setKeyCallback(input.keyCallback);
     window.setFramebufferSizeCallback(framebufferCallback);
-    try glfw.makeContextCurrent(window);
-    try glfw.swapInterval(1); // vsync
+    glfw.makeContextCurrent(window);
+    glfw.swapInterval(1); // vsync
 
-    var size = try window.getFramebufferSize();
+    var size = window.getFramebufferSize();
     zgl.viewport(0, 0, size.width, size.height);
     zgl.enable(.blend);
     zgl.disable(.multisample);
@@ -115,16 +115,15 @@ pub fn main() !void {
     defer texture_shaders.delete();
     texture_shaders.use();
 
-    var prng = DefaultPrng
-        .init(@intCast(u64, time.milliTimestamp()))
-        .random();
+    var prng = DefaultPrng.init(@intCast(u64, time.milliTimestamp()));
+    const random = prng.random();
 
     var flakes: [texture_count]Sprite = try createFlakes(
         texture_count,
         "sprites",
-        prng,
+        random,
     );
-    defer for (flakes) |*flake|
+    defer for (&flakes) |*flake|
         flake.delete();
 
     // Uniforms
@@ -169,16 +168,16 @@ pub fn main() !void {
         }
 
         var i: i32 = 0;
-        for (flakes) |*flake| {
+        for (&flakes) |*flake| {
             zgl.uniform1i(zgl.getUniformLocation(texture_shaders, "flake"), i);
-            flake.tick(prng.float(Float));
+            flake.tick(random.float(Float));
             flake.load();
             flake.draw();
             i += 1;
         }
 
-        try window.swapBuffers();
-        try glfw.pollEvents();
+        window.swapBuffers();
+        glfw.pollEvents();
     }
 }
 
@@ -190,9 +189,8 @@ fn createFlakes(
     prng: std.rand.Random,
 ) ![count]Sprite {
     var flakes: [count]Sprite = undefined;
-    var texture_paths = (try fs.cwd().openDir(
-        path,
-        .{ .iterate = true },
+    var texture_paths = (try fs.cwd().openIterableDir(
+        path,.{}
     )).iterate();
     var i: u32 = 0;
     var enumBuff: [16]u8 = undefined;
@@ -228,7 +226,7 @@ fn createFlakes(
     // std.log.debug("range: {}, {*}\n", .{ vertices.len, &vertices });
     // Randomize initial positions
 
-    for (flakes) |*flake| {
+    for (flakes) |flake| {
         for (flake.buffer) |*vertex| {
             // Map the range [0, 1) to [-1, 1)
             vertex.* = 2 * prng.float(Float) - 1;

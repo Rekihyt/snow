@@ -1,10 +1,11 @@
-const Builder = @import("std").build.Builder;
+const std = @import("std");
+const Build = std.Build;
 const builtin = @import("builtin");
 const glfw = @import("mach-glfw/build.zig");
 
-pub fn build(b: *Builder) void {
-    const target = b.standardTargetOptions(.{});
+pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
+    const target = b.standardTargetOptions(.{});
 
     var exe = b.addExecutable(.{
         .name = "main",
@@ -14,18 +15,14 @@ pub fn build(b: *Builder) void {
     });
     exe.install();
 
-    const ziglibs = "./";
-    exe.addAnonymousModule(ziglibs ++ "zgl/zgl.zig", .{});
-    exe.addAnonymousModule(ziglibs ++ "zigimg/zigimg.zig", .{});
-    exe.addAnonymousModule(ziglibs ++ "mach-glfw/src/main.zig", .{});
-    exe.addAnonymousModule(ziglibs ++ "zalgebra/src/main.zig", .{});
+    exe.addAnonymousModule("zgl", .{ .source_file = .{ .path = "zgl/zgl.zig" } });
+    exe.addAnonymousModule("zigimg", .{ .source_file = .{ .path = "zigimg/zigimg.zig" } });
+    exe.addAnonymousModule("mach-glfw", .{ .source_file = .{ .path ="mach-glfw/src/main.zig" } });
+    exe.addAnonymousModule("zalgebra", .{ .source_file = .{ .path =  "zalgebra/src/main.zig" } });
 
-    // exe.addIncludeDir("stb_image-2.22");
-    // exe.addCSourceFile("stb_image-2.22/stb_image_impl.c", &[_][]const u8{"-std=c99"});
-    // exe.linkLibC();
     exe.linkSystemLibrary("epoxy");
 
-    glfw.link(b, exe, .{});
+    try glfw.link(b, exe, .{});
 
     exe.install();
 

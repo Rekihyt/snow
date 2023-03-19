@@ -1,5 +1,5 @@
 const std = @import("std");
-const glfw = @import("glfw");
+const glfw = @import("mach-glfw");
 // const IntegerBitSet = std.bit_set.IntegerBitSet;
 const EnumSet = std.EnumSet;
 

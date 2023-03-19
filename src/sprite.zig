@@ -127,7 +127,7 @@ pub const Sprite = struct {
         // The image file, only needed to load into opengl
         var image = try Image.fromFilePath(self.allocator, image_path);
         defer image.deinit();
-        self.pixels = image.pixels.?.len();
+        self.pixels = image.pixels.len();
         self.width = image.width;
         self.height = image.height;
 
@@ -139,11 +139,11 @@ pub const Sprite = struct {
         var image_iter = image.iterator();
         var i: u64 = 0;
         while (image_iter.next()) |pixel| : (i += 4) {
-            const color = pixel.toIntegerColor8();
-            image_data[i + 0] = color.R;
-            image_data[i + 1] = color.G;
-            image_data[i + 2] = color.B;
-            image_data[i + 3] = color.A;
+            const color = pixel.toRgba(u8);
+            image_data[i + 0] = color.r;
+            image_data[i + 1] = color.g;
+            image_data[i + 2] = color.b;
+            image_data[i + 3] = color.a;
         }
         zgl.textureImage2D(
             .@"2d",
