@@ -13,17 +13,15 @@ pub fn build(b: *Build) !void {
         .target = target,
         .optimize = optimize,
     });
-    exe.install();
 
     exe.addAnonymousModule("zgl", .{ .source_file = .{ .path = "zgl/zgl.zig" } });
     exe.addAnonymousModule("zigimg", .{ .source_file = .{ .path = "zigimg/zigimg.zig" } });
-    exe.addAnonymousModule("mach-glfw", .{ .source_file = .{ .path ="mach-glfw/src/main.zig" } });
-    exe.addAnonymousModule("zalgebra", .{ .source_file = .{ .path =  "zalgebra/src/main.zig" } });
+    exe.addAnonymousModule("mach-glfw", .{ .source_file = .{ .path = "mach-glfw/src/main.zig" } });
+    exe.addAnonymousModule("zalgebra", .{ .source_file = .{ .path = "zalgebra/src/main.zig" } });
 
-    exe.linkSystemLibrary("epoxy");
+    exe.setMainPkgPath(".");
 
     try glfw.link(b, exe, .{});
-
     exe.install();
 
     const run = b.step("run", "Let it snow");

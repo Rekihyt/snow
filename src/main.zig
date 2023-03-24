@@ -1,5 +1,4 @@
 const std = @import("std");
-const panic = std.debug.panic;
 const assert = std.debug.assert;
 const fs = std.fs;
 const os = std.os;
@@ -18,6 +17,7 @@ const zgl = @import("zgl");
 const zwl = @import("zwl");
 const glfw = @import("mach-glfw");
 const za = @import("zalgebra");
+const zigimg = @import("zigimg");
 const Vec3 = za.Vec3;
 const Mat4 = za.Mat4;
 
@@ -27,6 +27,8 @@ const Action = glfw.Action;
 const Mods = glfw.Mods;
 const Float = zgl.Float;
 const Program = zgl.Program;
+
+const Image = zigimg.Image;
 
 // const AllShaders = @import("all_shaders.zig").AllShaders;
 // const StaticGeometry = @import("static_geometry.zig").StaticGeometry;
@@ -67,12 +69,26 @@ fn handleInput(window: Window, model: *za.Vec3) bool {
     return result;
 }
 
+/// Default GLFW error handling callback
+fn errorCallback(error_code: glfw.ErrorCode, description: [:0]const u8) void {
+    std.log.err("glfw: {}: {s}\n", .{ error_code, description });
+}
+
+fn glGetProcAddress(p: glfw.GLProc, proc: [:0]const u8) ?*const anyopaque {
+    _ = p;
+    return glfw.getProcAddress(proc);
+}
+
 pub fn main() !void {
-    _ = glfw.init(.{});
+    glfw.setErrorCallback(errorCallback);
+    if (!glfw.init(.{})) {
+        std.log.err("failed to initialize GLFW: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    }
     defer glfw.terminate();
 
-    // Create our window
-    const window =  Window.create(640, 480, "Snow", null, null, .{
+    const defaultSize = .{ .height = 640, .width = 480 };
+    const window = Window.create(defaultSize.height, defaultSize.width, "Snow", null, null, .{
         .transparent_framebuffer = true,
         .maximized = true,
         .context_version_major = 4,
@@ -81,7 +97,10 @@ pub fn main() !void {
         .opengl_forward_compat = true,
         // .opengl_debug_context = true,
         .opengl_profile = .opengl_core_profile,
-    }) orelse unreachable;
+    }) orelse {
+        std.log.err("Failed to create window: {?s}", .{glfw.getErrorString()});
+        std.process.exit(1);
+    };
     defer window.destroy();
 
     window.setKeyCallback(input.keyCallback);
@@ -89,8 +108,11 @@ pub fn main() !void {
     glfw.makeContextCurrent(window);
     glfw.swapInterval(1); // vsync
 
+    const proc: glfw.GLProc = undefined;
+    try zgl.loadExtensions(proc, glGetProcAddress);
+
     var size = window.getFramebufferSize();
-    zgl.viewport(0, 0, size.width, size.height);
+    zgl.viewport(0, 0, size.height, size.height);
     zgl.enable(.blend);
     zgl.disable(.multisample);
     // zgl.enable(.depth_test);
@@ -189,9 +211,7 @@ fn createFlakes(
     prng: std.rand.Random,
 ) ![count]Sprite {
     var flakes: [count]Sprite = undefined;
-    var texture_paths = (try fs.cwd().openIterableDir(
-        path,.{}
-    )).iterate();
+    var texture_paths = (try fs.cwd().openIterableDir(path, .{})).iterate();
     var i: u32 = 0;
     var enumBuff: [16]u8 = undefined;
     var pathBuff: [512]u8 = undefined;
